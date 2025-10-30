@@ -5,6 +5,9 @@ import numpy as np
 import torch
 import librosa
 import soundfile as sf
+import threading
+import time
+
 
 from demucs.pretrained import get_model
 from demucs.apply import apply_model
@@ -84,6 +87,12 @@ def separate_stems(input_audio, out_dir):
 # =========================
 _MUSICGEN_MODEL = None
 _MUSICGEN_PROC = None
+
+def fake_progress(label="🎶 Generating accompaniment"):
+    for i in range(100):
+        print(f"\r{label}{'.' * (i % 4)}", end='', flush=True)
+        time.sleep(0.5)
+
 def generate_accompaniment(style_prompt, out_path, duration=30):
     """Generate accompaniment using MusicGen"""
     global _MUSICGEN_MODEL, _MUSICGEN_PROC
@@ -95,10 +104,16 @@ def generate_accompaniment(style_prompt, out_path, duration=30):
 
     prompt = f"background music in {style_prompt} style"
     log(f"🎶 Generating accompaniment: {prompt}")
-    inputs = _MUSICGEN_PROC(text=prompt, return_tensors="pt", padding=True).to(DEVICE)
 
+    progress_thread = threading.Thread(target=fake_progress)
+    progress_thread.start()
+
+    inputs = _MUSICGEN_PROC(text=[prompt], padding=True, return_tensors="pt").to(DEVICE)
     with torch.no_grad():
-        audio = _MUSICGEN_MODEL.generate(**inputs, max_new_tokens=int(duration * SAMPLE_RATE / 256))
+        audio = _MUSICGEN_MODEL.generate(**inputs, do_sample=True, guidance_scale=3, max_new_tokens=duration * 50)
+
+    progress_thread.join(timeout=0)
+    print("\n✅ Music generated.")
 
     arr = audio[0, 0].cpu().numpy()
     arr = arr / (np.max(np.abs(arr)) + 1e-9)
