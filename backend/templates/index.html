@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>RemixAI Frontend</title>
+</head>
+<body>
+    <h1>RemixAI</h1>
+    <form id="uploadForm">
+        <input type="file" id="file" accept="audio/*" />
+        <button type="submit">Subir Audio</button>
+    </form>
+
+    <button id="btnSeparate">Separar Stems</button>
+    <input type="text" id="stylePrompt" placeholder="Enter remix style (e.g., 'Jazz Funk')" class="bg-gray-800 px-3 py-2 rounded-lg w-72 text-white" />
+    <button id="btnGenerate">Generar Acompañamiento</button>
+    <button id="btnMix">Mezclar y Descargar</button>
+
+    <div id="status"></div>
+    <audio id="player" controls></audio>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

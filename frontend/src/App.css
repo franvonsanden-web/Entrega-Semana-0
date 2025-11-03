@@ -1,0 +1,167 @@
+/* Fullscreen canvas para el fondo */
+.bgcubes-canvas {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    display: block;
+    z-index: 0;
+}
+
+/* Root layout (Tailwind via @apply) */
+.app-root {
+    @apply min-h-screen w-full overflow-hidden relative;
+    @apply bg-black text-white;
+    @apply flex items-center justify-center;
+}
+
+/* Tarjeta central (glassmorphism) */
+.card {
+    @apply relative z-10 w-[92%] max-w-xl rounded-3xl p-8;
+    @apply border border-white/10 shadow-2xl;
+    background: linear-gradient(180deg, rgba(22,22,32,0.75), rgba(10,10,16,0.55));
+    backdrop-filter: blur(18px);
+}
+
+/* Título */
+.title {
+    @apply text-4xl font-extrabold tracking-wide text-center;
+    background: linear-gradient(90deg, #93c5fd 0%, #a78bfa 40%, #34d399 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+    .title span {
+        color: #ffffff;
+    }
+
+/* Subtítulo */
+.subtitle {
+    @apply text-center text-sm text-gray-400 mt-2 mb-6;
+}
+
+/* Uploader */
+.uploader .file {
+    @apply block w-full text-sm text-gray-300;
+}
+
+    .uploader .file::file-selector-button {
+        @apply mr-4 py-2 px-4 rounded-lg font-semibold text-white transition;
+        background: linear-gradient(90deg, #6366f1, #06b6d4);
+    }
+
+        .uploader .file::file-selector-button:hover {
+            filter: brightness(1.1);
+        }
+
+/* Botones (gooey/neón) */
+.btnrow {
+    @apply mt-6 mb-4 flex flex-wrap gap-3 justify-center;
+}
+
+.btn {
+    @apply px-5 py-2.5 rounded-full text-sm font-semibold transition-transform;
+    @apply border border-white/10;
+    box-shadow: 0 0 0px rgba(255,255,255,0.0);
+}
+
+    .btn:hover {
+        transform: translateY(-1px) scale(1.02);
+        box-shadow: 0 0 18px rgba(255,255,255,0.12);
+    }
+
+.btn-blue {
+    background: linear-gradient(90deg,#3b82f6,#22d3ee);
+}
+
+.btn-violet {
+    background: linear-gradient(90deg,#a78bfa,#8b5cf6);
+}
+
+.btn-green {
+    background: linear-gradient(90deg,#34d399,#10b981);
+}
+
+.btn-amber {
+    background: linear-gradient(90deg,#f59e0b,#fb923c);
+}
+
+.btn-gray {
+    background: linear-gradient(90deg,#6b7280,#374151);
+}
+
+/* Volumen (slider) */
+.vol {
+    @apply mt-6 flex items-center gap-3 justify-center;
+}
+
+    .vol label {
+        @apply text-gray-300 text-sm;
+    }
+
+    .vol input[type="range"] {
+        @apply w-56;
+        -webkit-appearance: none;
+        appearance: none;
+        height: 4px;
+        background: linear-gradient(90deg,#8b5cf6,#22d3ee);
+        border-radius: 9999px;
+        outline: none;
+    }
+
+        .vol input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 9999px;
+            background: white;
+            box-shadow: 0 0 16px rgba(139,92,246,0.7);
+            transition: transform .15s ease;
+        }
+
+            .vol input[type="range"]::-webkit-slider-thumb:hover {
+                transform: scale(1.1);
+            }
+
+    .vol span {
+        @apply text-xs text-gray-400;
+    }
+
+/* Audio player */
+.player {
+    @apply w-full mt-5 rounded-lg;
+    background: rgba(0,0,0,0.25);
+}
+
+/* Status */
+.status {
+    @apply text-center text-xs text-sky-400 mt-4 font-mono;
+}
+.progress-wrapper {
+    @apply mt-5 text-center;
+}
+
+.progress-label {
+    @apply text-xs text-sky-300 mb-2 tracking-wider uppercase;
+    animation: blink 1.2s infinite;
+}
+
+.progress-bar {
+    @apply w-full h-2 bg-gray-700/30 rounded-full overflow-hidden;
+}
+
+.progress-fill {
+    @apply h-full bg-gradient-to-r from-indigo-400 via-sky-400 to-teal-300 transition-all duration-200;
+}
+
+@keyframes blink {
+    0%, 100% {
+        opacity: 0.7;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}
