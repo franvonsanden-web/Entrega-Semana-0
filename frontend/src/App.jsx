@@ -1,188 +1,141 @@
-﻿import React, { useEffect, useRef, useState } from "react";
-import "./App.css";
-
-const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000";
-
-function BackgroundCubes() {
-  const canvasRef = useRef(null);
-  const animRef = useRef(0);
-  const mouse = useRef({ x: 0, y: 0 });
-
-  useEffect(() => {
-    const c = canvasRef.current;
-    const ctx = c.getContext("2d");
-    let w = (c.width = window.innerWidth);
-    let h = (c.height = window.innerHeight);
-
-    const onResize = () => {
-      w = c.width = window.innerWidth;
-      h = c.height = window.innerHeight;
-    };
-    window.addEventListener("resize", onResize);
-    window.addEventListener("mousemove", (e) => {
-      mouse.current.x = (e.clientX / w - 0.5) * 2;
-      mouse.current.y = (e.clientY / h - 0.5) * 2;
-    });
-
-    const N = 80;
-    const cubes = Array.from({ length: N }).map(() => ({
-      x: Math.random() * w,
-      y: Math.random() * h,
-      s: 6 + Math.random() * 24,
-      a: Math.random() * Math.PI * 2,
-      sp: 0.15 + Math.random() * 0.6,
-      d: Math.random() * 0.6 + 0.4,
-      o: 0.15 + Math.random() * 0.4,
-    }));
-
-    const grad = ctx.createLinearGradient(0, 0, w, h);
-    grad.addColorStop(0, "rgba(139,92,246,0.7)");
-    grad.addColorStop(1, "rgba(56,189,248,0.7)");
-
-    const loop = () => {
-      ctx.clearRect(0, 0, w, h);
-      ctx.fillStyle = "rgba(10,10,16,0.9)";
-      ctx.fillRect(0, 0, w, h);
-      cubes.forEach((q) => {
-        q.a += 0.002 * q.sp;
-        q.y -= q.sp;
-        q.x += Math.sin(q.a) * q.d + mouse.current.x * 0.5;
-        if (q.y + q.s < 0) q.y = h + q.s;
-        if (q.x < -q.s) q.x = w + q.s;
-        if (q.x > w + q.s) q.x = -q.s;
-        ctx.save();
-        ctx.translate(q.x, q.y);
-        ctx.rotate(q.a * 0.1);
-        ctx.globalAlpha = q.o;
-        ctx.fillStyle = grad;
-        ctx.fillRect(-q.s / 2, -q.s / 2, q.s, q.s);
-        ctx.restore();
-      });
-      animRef.current = requestAnimationFrame(loop);
-    };
-    loop();
-
-    return () => {
-      cancelAnimationFrame(animRef.current);
-      window.removeEventListener("resize", onResize);
-    };
-  }, []);
-
-  return <canvas ref={canvasRef} className="bgcubes-canvas" />;
-}
-
-function ProgressBar({ progress, label }) {
-  return (
-    <div className="progress-wrapper">
-      <p className="progress-label">{label}</p>
-      <div className="progress-bar">
-        <div className="progress-fill" style={{ width: `${progress}%` }} />
-      </div>
-    </div>
-  );
-}
+import React, { useState, useCallback } from "react";
 
 export default function App() {
-  const [status, setStatus] = useState("Ready");
   const [file, setFile] = useState(null);
-  const [audioUrl, setAudioUrl] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [label, setLabel] = useState("");
-  const [volume, setVolume] = useState(70);
-  const audioRef = useRef(null);
+  const [status, setStatus] = useState("Arrastra un archivo o haz clic para subirlo");
+  const [mixReady, setMixReady] = useState(false);
 
-  useEffect(() => {
-    if (audioRef.current) audioRef.current.volume = volume / 100;
-  }, [volume]);
+  // Drag & Drop
+  const handleDrop = useCallback((e) => {
+    e.preventDefault();
+    const droppedFile = e.dataTransfer.files[0];
+    if (droppedFile) {
+      setFile(droppedFile);
+      setStatus(`🎵 Archivo listo: ${droppedFile.name}`);
+    }
+  }, []);
 
-  const simulateProgress = () => {
-    setProgress(0);
-    let p = 0;
-    const interval = setInterval(() => {
-      p += Math.random() * 10;
-      if (p >= 100) {
-        p = 100;
-        clearInterval(interval);
-        setTimeout(() => setLoading(false), 600);
-      }
-      setProgress(p);
-    }, 200);
+  const handleDragOver = (e) => e.preventDefault();
+
+  // Selección manual
+  const handleSelect = (e) => {
+    const selected = e.target.files[0];
+    if (selected) {
+      setFile(selected);
+      setStatus(`🎵 Archivo listo: ${selected.name}`);
+    }
   };
 
-const call = async (endpoint, label, expectBlob = false, body = null) => {
-  setLoading(true);
-  setLabel(label);
-  simulateProgress();
-  try {
-    const r = await fetch(`${API_URL}/${endpoint}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: body ? JSON.stringify(body) : null,
-    });
-    if (!r.ok) throw new Error("Failed");
-    if (expectBlob) {
-      const blob = await r.blob();
-      const url = URL.createObjectURL(blob);
-      setAudioUrl(url);
+  // Subida al backend Flask
+  const handleUpload = async () => {
+    if (!file) return;
+    setStatus("⏳ Subiendo archivo...");
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch("http://127.0.0.1:5000/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      setStatus(`✅ Archivo subido: ${data.filename}`);
+      setMixReady(true);
+    } catch (err) {
+      console.error(err);
+      setStatus("❌ Error al subir el archivo");
     }
-    setStatus(`✅ ${label} complete`);
-  } catch {
-    setStatus(`❌ ${label} error`);
-  }
-};
+  };
+
+  // Mezcla
+  const handleMix = async () => {
+    setStatus("🎧 Mezclando...");
+    try {
+      const res = await fetch("http://127.0.0.1:5000/mix", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filename: file.name }),
+      });
+      const data = await res.json();
+      setStatus(data.message);
+    } catch (err) {
+      console.error(err);
+      setStatus("❌ Error al mezclar el archivo");
+    }
+  };
+
+  // Descarga
+  const handleDownload = async () => {
+    setStatus("⬇️ Descargando...");
+    try {
+      const res = await fetch("http://127.0.0.1:5000/download");
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "output.wav";
+      a.click();
+      window.URL.revokeObjectURL(url);
+      setStatus("✅ Archivo descargado");
+    } catch (err) {
+      console.error(err);
+      setStatus("❌ Error al descargar el archivo");
+    }
+  };
 
   return (
-    <div className="app-root">
-      <BackgroundCubes />
-
-      <div className="card">
-        <h1 className="title">
-          Remix<span>AI</span>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-indigo-950 flex items-center justify-center text-white">
+      <div
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl shadow-2xl p-10 w-[90%] max-w-lg text-center space-y-6"
+      >
+        <h1 className="text-3xl font-bold text-indigo-400">
+          🎵 Music Generator
         </h1>
-        <p className="subtitle">AI-powered remix generator</p>
 
-        <input
-          type="file"
-          onChange={(e) => setFile(e.target.files?.[0] || null)}
-          className="file"
-        />
+        <p className="text-gray-300 text-sm">{status}</p>
 
-        <div className="btnrow">
-          <button className="btn btn-blue" onClick={() => call("upload", "Uploading")}>
-            Upload
-          </button>
-          <button className="btn btn-violet" onClick={() => call("separate", "Separating", false, { filename: file?.name })}>
-            Separate
-          </button>
-          <button className="btn btn-green" onClick={() => call("generate", "Generating")}>
-            Generate
-          </button>
-          <button className="btn btn-amber" onClick={() => call("mix", "Mixing", true)}>
-            Mix
-          </button>
-          <button className="btn btn-gray" onClick={() => call("download", "Downloading", true)}>
-            Download
-          </button>
-        </div>
-
-        {loading && <ProgressBar progress={progress} label={label} />}
-
-        {audioUrl && <audio className="player" ref={audioRef} src={audioUrl} controls />}
-
-        <div className="vol">
-          <label>Volume</label>
+        <label
+          htmlFor="file"
+          className="cursor-pointer bg-indigo-600 hover:bg-indigo-500 transition text-white px-6 py-3 rounded-xl inline-block font-semibold"
+        >
+          {file ? "Cambiar archivo" : "Seleccionar archivo"}
           <input
-            type="range"
-            min={0}
-            max={100}
-            value={volume}
-            onChange={(e) => setVolume(Number(e.target.value))}
+            id="file"
+            type="file"
+            onChange={handleSelect}
+            className="hidden"
           />
-          <span>{volume}%</span>
-        </div>
+        </label>
 
-        <p className="status">{status}</p>
+        <div className="flex flex-col gap-3 mt-4">
+          <button
+            onClick={handleUpload}
+            className="bg-blue-600 hover:bg-blue-500 transition px-6 py-2 rounded-lg"
+          >
+            Subir
+          </button>
+
+          {mixReady && (
+            <>
+              <button
+                onClick={handleMix}
+                className="bg-pink-600 hover:bg-pink-500 transition px-6 py-2 rounded-lg"
+              >
+                Mezclar
+              </button>
+
+              <button
+                onClick={handleDownload}
+                className="bg-green-600 hover:bg-green-500 transition px-6 py-2 rounded-lg"
+              >
+                Descargar
+              </button>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
