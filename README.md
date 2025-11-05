@@ -24,8 +24,8 @@ FFmpeg instalado (verificar con ffmpeg -version)
 
 Clonar o descomprimir el proyecto
 
-git clone https://github.com/tuusuario/RemixAI_Project.git
-cd RemixAI_Project/RemixAI
+git clone https://github.com/franvonsanden-web/Entrega-Semana-0.git
+cd [carpeta]/Entrega-Semana-0
 
 
 o, si recibiste un .zip, simplemente descomprímelo en cualquier lugar.
